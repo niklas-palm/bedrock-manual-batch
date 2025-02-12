@@ -10,7 +10,7 @@ prompt_id, prompt
 
 and runs n Lambda functions in parallel, with a single row from the csv as input to each Lambda, all using the Bedrock invoke_model API with the provided prompt. Each result is written to a DynamoDB table, and when the entire csv has been processed, another Lambda function retreives all results from DDB and creates a new csv, uploading it to S3.
 
-This structure is used in S3:
+This structure used in S3:
 
 ```
 s3://your-bucket/
@@ -23,7 +23,7 @@ s3://your-bucket/
 ```
 
 > [!NOTE]  
-> By default, this template ensures all data in S3 is deleted after 3 day, and each item in DDB after 5 days. This is only for cost control.
+> By default, this template ensures all data in S3 is deleted after 3 day, and each item in DDB after 2 days. This is only for cost control.
 
 > [!WARNING]  
 > This sample, if used without carefully considering concurrency, may greatly impact the consumed Bedrock invoke_model on demand quotas in the AWS account where it's run. If there are other applications relying on Bedrock in this AWS account, ensure you use a different region for this (Bedrock quota is regional).
@@ -44,7 +44,7 @@ Given your character of your prompt, choose a concurrency that makes sense. Edit
 
 0. Decide on Model
 
-Update the model ARN in the [process prompt Lambda function](process_prompt/app.py)
+Update the model ARN in the [process prompt Lambda function](process_prompt/app.py). Default implementation assumed Anthropic model.
 
 0. Choose AWS region
 

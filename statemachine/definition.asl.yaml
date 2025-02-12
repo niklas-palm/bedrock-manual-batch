@@ -1,0 +1,48 @@
+StartAt: ProcessCSVPrompts
+States:
+  ProcessCSVPrompts:
+    Type: Map
+    ItemProcessor:
+      ProcessorConfig:
+        Mode: DISTRIBUTED
+        ExecutionType: STANDARD
+      StartAt: ProcessRow
+      States:
+        ProcessRow:
+          Type: Task
+          Resource: "${ProcessorFunctionArn}"
+          Parameters:
+            data.$: "$"
+          Retry:
+            - ErrorEquals:
+                - ThrottlingException
+                - ServiceQuotaExceededException
+                - TooManyRequestsException
+                - InternalServerException
+                - ServiceUnavailableException
+              IntervalSeconds: 20
+              MaxAttempts: 5
+              BackoffRate: 2
+          End: true
+    MaxConcurrency: 2
+    ItemReader:
+      ReaderConfig:
+        InputType: CSV
+        CSVHeaderLocation: FIRST_ROW
+      Resource: "arn:aws:states:::s3:getObject"
+      Parameters:
+        Bucket.$: $.bucket
+        Key.$: $.key
+    ItemSelector:
+      execution_id.$: "$$.Execution.Id"
+      csv_row.$: "$$.Map.Item.Value"
+    ResultPath: "$.mapResults"
+    Next: AggregateResults
+  AggregateResults:
+    Type: Task
+    Resource: "${AggregatorFunctionArn}"
+    Parameters:
+      execution_id.$: "$$.Execution.Id"
+      data.$: "$.mapResults"
+      job_prefix.$: "$$.Execution.Input.job_prefix"
+    End: true

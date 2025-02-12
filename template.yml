@@ -1,0 +1,94 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: Manual Bedrock invoke model batch
+
+Resources:
+  ProcessingPromptStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      DefinitionUri: statemachine/definition.asl.yaml
+      DefinitionSubstitutions:
+        ProcessorFunctionArn: !GetAtt ProcessorFunction.Arn
+        AggregatorFunctionArn: !GetAtt AggregatorFunction.Arn
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ProcessorFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref AggregatorFunction
+        - S3ReadPolicy:
+            BucketName: !Ref JobBucket
+        - AWSStepFunctionsFullAccess
+
+  ProcessorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/process_prompt
+      Handler: app.lambda_handler
+      Runtime: python3.11
+      MemorySize: 128
+      Timeout: 45
+      Environment:
+        Variables:
+          RESULTS_TABLE: !Ref ResultsTable
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref ResultsTable
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: "*"
+
+  AggregatorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/aggregate_results
+      Handler: app.lambda_handler
+      Runtime: python3.11
+      MemorySize: 256
+      Timeout: 300
+      Environment:
+        Variables:
+          RESULTS_TABLE: !Ref ResultsTable
+          RESULT_BUCKET: !Ref JobBucket
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ResultsTable
+        - S3CrudPolicy:
+            BucketName: !Ref JobBucket
+
+  ResultsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: execution_id
+          AttributeType: S
+        - AttributeName: prompt_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: execution_id
+          KeyType: HASH
+        - AttributeName: prompt_id
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+  JobBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldFiles
+            Status: Enabled
+            ExpirationInDays: 3
+
+Outputs:
+  StateMachineArn:
+    Description: "State Machine ARN"
+    Value: !Ref ProcessingPromptStateMachine
+  JobBucketName:
+    Description: "JobBucket S3 Bucket Name"
+    Value: !Ref JobBucket
