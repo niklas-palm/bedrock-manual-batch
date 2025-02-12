@@ -1,5 +1,7 @@
 # Manual bedrock invoke batch
 
+![Solution overview](assets/architecture.png)
+
 Step function workflow that takes a csv on the shape
 
 ```csv
