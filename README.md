@@ -25,6 +25,9 @@ s3://your-bucket/
 ```
 
 > [!NOTE]  
+> This essentially mimicks the AWS Bedrock Batch API in functionality. Make sure the Bedrock batch API isn't more suitable for your usecase, with lower token cost and higher throughput.
+
+> [!NOTE]  
 > By default, this template ensures all data in S3 is deleted after 3 day, and each item in DDB after 2 days. This is only for cost control.
 
 > [!WARNING]  
