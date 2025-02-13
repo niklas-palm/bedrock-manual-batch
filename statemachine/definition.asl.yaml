@@ -20,8 +20,8 @@ States:
                 - TooManyRequestsException
                 - InternalServerException
                 - ServiceUnavailableException
-              IntervalSeconds: 20
-              MaxAttempts: 5
+              IntervalSeconds: 30
+              MaxAttempts: 6
               BackoffRate: 2
           End: true
     MaxConcurrency: 10
