@@ -24,7 +24,7 @@ States:
               MaxAttempts: 5
               BackoffRate: 2
           End: true
-    MaxConcurrency: 2
+    MaxConcurrency: 10
     ItemReader:
       ReaderConfig:
         InputType: CSV
