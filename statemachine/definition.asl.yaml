@@ -20,11 +20,12 @@ States:
                 - TooManyRequestsException
                 - InternalServerException
                 - ServiceUnavailableException
-              IntervalSeconds: 30
-              MaxAttempts: 6
+              IntervalSeconds: 45
+              MaxAttempts: 8
               BackoffRate: 2
+              JitterStrategy: FULL
           End: true
-    MaxConcurrency: 10
+    MaxConcurrency: 8
     ItemReader:
       ReaderConfig:
         InputType: CSV
